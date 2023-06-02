@@ -2,16 +2,34 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"html/template"
+	"log"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
+	tplPath := filepath.Join("templates", "home.gohtml")
+	executeTemplate(w, tplPath)
+}
+
+func executeTemplate(w http.ResponseWriter, filepath string) {
 	w.Header().Set("Content-Type", "text/html")
-	fmt.Fprint(w, "<h1>Welcome to my url-shortener</h1>")
+	tpl, err := template.ParseFiles(filepath)
+	if err != nil {
+		log.Printf("parsing templates: %v", err)
+		http.Error(w, "There was an error parsing the template.", http.StatusInternalServerError)
+		return
+	}
+	err = tpl.Execute(w, nil)
+	if err != nil {
+		log.Printf("executing template: %v", err)
+		http.Error(w, "There was an error executing the template.", http.StatusInternalServerError)
+		return
+	}
 }
 
 func urlContext(next http.Handler) http.Handler {
