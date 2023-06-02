@@ -1,0 +1,31 @@
+<h1>Hello, {{.Name}}</h1>
+<p>You are {{.Age}} years old.</p>
+<p>Your height is {{.Height}} meters</p>
+<p>Your are a {{.Profession}} by profession.</p>
+<div>
+    <p>Your hobbies are</p>
+    <ul>
+    {{- range $index, $value := .Hobbies -}}
+        <li>{{$value}}</li>
+    {{end -}}
+    </ul>
+</div>
+<div>
+    <p>Here are some skills we value and your qualifications for them.</p>
+    <table>
+        <tr>
+            <th>Skill</th>
+            <th>Apt?</th>
+        </tr>
+        {{range $key, $value := .Skills -}}
+        <tr>
+            <td>{{$key}}</td>
+            {{- if $value}}
+            <td>Yes</td>
+            {{- else}}
+            <td>No</td>
+            {{- end}}
+        </tr>
+        {{end}}
+    </table>
+</div>
