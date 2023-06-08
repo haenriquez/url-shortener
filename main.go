@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"html/template"
@@ -11,9 +12,20 @@ import (
 	"time"
 )
 
+type shortenReq struct {
+	Url string `json:"url"`
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request) {
-	tplPath := filepath.Join("templates", "home.gohtml")
-	executeTemplate(w, tplPath)
+	executeTemplate(w, filepath.Join("templates", "home.gohtml"))
+}
+
+func contactHandler(w http.ResponseWriter, r *http.Request) {
+	executeTemplate(w, filepath.Join("templates", "contact.gohtml"))
+}
+
+func faqHandler(w http.ResponseWriter, r *http.Request) {
+	executeTemplate(w, filepath.Join("templates", "faq.gohtml"))
 }
 
 func executeTemplate(w http.ResponseWriter, filepath string) {
@@ -50,6 +62,19 @@ func getUrl(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func postUrl(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		http.Error(w, "Unable to parse form submission", http.StatusBadRequest)
+		return
+	}
+
+	fmt.Println("url: ", r.FormValue("url"))
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Request processed successfully"))
+}
+
 func main() {
 	r := chi.NewRouter()
 
@@ -66,10 +91,16 @@ func main() {
 
 	// Register the routes
 	r.Get("/", homeHandler)
+	r.Get("/contact", contactHandler)
+	r.Get("/faq", faqHandler)
 
 	r.Route("/api/{id}", func(r chi.Router) {
 		r.Use(urlContext)
 		r.Get("/", getUrl)
+	})
+
+	r.Route("/api/shorten", func(r chi.Router) {
+		r.Post("/", postUrl)
 	})
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
