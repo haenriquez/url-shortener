@@ -4,45 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"html/template"
-	"log"
+	"github.com/haenriquez/url-shortener/controllers"
+	"github.com/haenriquez/url-shortener/views"
 	"net/http"
 	"path/filepath"
-	"time"
 )
-
-type shortenReq struct {
-	Url string `json:"url"`
-}
-
-func homeHandler(w http.ResponseWriter, r *http.Request) {
-	executeTemplate(w, filepath.Join("templates", "home.gohtml"))
-}
-
-func contactHandler(w http.ResponseWriter, r *http.Request) {
-	executeTemplate(w, filepath.Join("templates", "contact.gohtml"))
-}
-
-func faqHandler(w http.ResponseWriter, r *http.Request) {
-	executeTemplate(w, filepath.Join("templates", "faq.gohtml"))
-}
-
-func executeTemplate(w http.ResponseWriter, filepath string) {
-	w.Header().Set("Content-Type", "text/html")
-	tpl, err := template.ParseFiles(filepath)
-	if err != nil {
-		log.Printf("parsing templates: %v", err)
-		http.Error(w, "There was an error parsing the template.", http.StatusInternalServerError)
-		return
-	}
-	err = tpl.Execute(w, nil)
-	if err != nil {
-		log.Printf("executing template: %v", err)
-		http.Error(w, "There was an error executing the template.", http.StatusInternalServerError)
-		return
-	}
-}
 
 func urlContext(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -79,20 +45,26 @@ func main() {
 	r := chi.NewRouter()
 
 	// TODO: expand middleware as needed
-	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
+	// r.Use(middleware.RequestID)
+	// r.Use(middleware.RealIP)
+	// r.Use(middleware.Logger)
+	// r.Use(middleware.Recoverer)
 
 	// Set a timeout value on the request context (ctx), that will signal
 	// through ctx.Done() that the request has timed out and further
 	// processing should be stopped.
-	r.Use(middleware.Timeout(60 * time.Second))
+	// r.Use(middleware.Timeout(60 * time.Second))
 
-	// Register the routes
-	r.Get("/", homeHandler)
-	r.Get("/contact", contactHandler)
-	r.Get("/faq", faqHandler)
+	// Parse templates before starting the server
+	r.Get("/", controllers.StaticHandler(
+		views.Must(views.Parse(filepath.Join("templates", "home.gohtml")))),
+	)
+	r.Get("/contact", controllers.StaticHandler(
+		views.Must(views.Parse(filepath.Join("templates", "contact.gohtml")))),
+	)
+	r.Get("/faq", controllers.StaticHandler(
+		views.Must(views.Parse(filepath.Join("templates", "faq.gohtml")))),
+	)
 
 	r.Route("/api/{id}", func(r chi.Router) {
 		r.Use(urlContext)
@@ -107,5 +79,6 @@ func main() {
 		http.Error(w, "Page not found", http.StatusNotFound)
 	})
 
+	fmt.Println("Starting server on :3000...")
 	http.ListenAndServe(":3000", r)
 }
